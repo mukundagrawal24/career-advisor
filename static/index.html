@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareerPilot - AI Career Advisor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#22222f;
+    --text:#e8e6e3;--text2:#9b98a0;--text3:#5f5d66;
+    --accent:#6c63ff;--accent2:#8b7dff;--accent-glow:rgba(108,99,255,.15);
+    --green:#34d399;--green-bg:rgba(52,211,153,.08);
+    --amber:#fbbf24;--amber-bg:rgba(251,191,36,.08);
+    --coral:#f87171;--radius:12px;
+  }
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+  /* ── Header ────────────────────────────────────── */
+  .header{padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(20px);position:relative;z-index:10}
+  .header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.3}
+  .logo{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
+  .header h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
+  .header span{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+  .session-badge{margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--green-bg);border:1px solid rgba(52,211,153,.15);font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace}
+  .session-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+  /* ── Chat area ─────────────────────────────────── */
+  .chat-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
+  .chat-area::-webkit-scrollbar{width:4px}
+  .chat-area::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
+
+  /* Messages */
+  .msg{max-width:720px;animation:fadeUp .3s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .msg.user{align-self:flex-end}
+  .msg.assistant{align-self:flex-start;width:100%;max-width:720px}
+
+  .msg-bubble{padding:14px 18px;border-radius:var(--radius);line-height:1.6;font-size:14.5px}
+  .msg.user .msg-bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+  .msg.assistant .msg-bubble{background:var(--surface2);color:var(--text);border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,.04)}
+
+  .msg-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px}
+  .msg.user .msg-label{text-align:right;justify-content:flex-end}
+
+  /* Memory indicator */
+  .memory-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-family:'JetBrains Mono',monospace;background:var(--accent-glow);color:var(--accent2);border:1px solid rgba(108,99,255,.15)}
+
+  /* Memory panel (expandable below assistant message) */
+  .memory-panel{margin-top:8px;border-radius:8px;background:var(--surface);border:1px solid rgba(255,255,255,.04);overflow:hidden;font-size:12px}
+  .memory-toggle{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:11px;user-select:none;transition:background .15s}
+  .memory-toggle:hover{background:var(--surface2)}
+  .memory-toggle svg{width:12px;height:12px;transition:transform .2s}
+  .memory-toggle.open svg{transform:rotate(90deg)}
+  .memory-list{padding:0 12px 10px;display:none}
+  .memory-list.show{display:block}
+  .memory-item{padding:6px 8px;margin-top:4px;border-radius:6px;background:var(--surface2);color:var(--text2);line-height:1.4;font-size:11px;border-left:2px solid var(--accent)}
+
+  /* Welcome card */
+  .welcome{align-self:center;text-align:center;max-width:480px;padding:40px 20px}
+  .welcome-icon{width:64px;height:64px;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent),#a78bfa);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px}
+  .welcome h2{font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
+  .welcome p{color:var(--text2);font-size:14px;line-height:1.5;margin-bottom:24px}
+  .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+  .suggestion{padding:8px 14px;border-radius:20px;background:var(--surface2);border:1px solid rgba(255,255,255,.06);font-size:12.5px;color:var(--text2);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+  .suggestion:hover{background:var(--surface3);color:var(--text);border-color:var(--accent);transform:translateY(-1px)}
+
+  /* ── Input area ────────────────────────────────── */
+  .input-area{padding:16px 24px 20px;border-top:1px solid rgba(255,255,255,.04);background:var(--surface)}
+  .input-row{display:flex;gap:10px;max-width:720px;margin:0 auto}
+  .input-row textarea{flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:12px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;resize:none;outline:none;min-height:44px;max-height:120px;line-height:1.5;transition:border-color .15s}
+  .input-row textarea:focus{border-color:var(--accent)}
+  .input-row textarea::placeholder{color:var(--text3)}
+  .send-btn{width:44px;height:44px;border-radius:var(--radius);background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+  .send-btn:hover{background:var(--accent2);transform:scale(1.04)}
+  .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .send-btn svg{width:18px;height:18px;color:#fff}
+  .input-hint{text-align:center;margin-top:8px;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+  /* Typing indicator */
+  .typing{display:flex;gap:4px;padding:14px 18px}
+  .typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce .6s infinite alternate}
+  .typing span:nth-child(2){animation-delay:.15s}
+  .typing span:nth-child(3){animation-delay:.3s}
+  @keyframes bounce{to{opacity:.3;transform:translateY(-4px)}}
+
+  /* Session controls */
+  .session-controls{display:flex;gap:8px;align-items:center;padding:8px 24px;background:var(--surface);border-bottom:1px solid rgba(255,255,255,.03)}
+  .session-btn{padding:5px 10px;border-radius:6px;background:var(--surface2);border:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--text2);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
+  .session-btn:hover{background:var(--surface3);color:var(--text)}
+  .session-btn.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent2)}
+  .session-label{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+
+  /* Reflect panel */
+  .reflect-btn{padding:5px 10px;border-radius:6px;background:var(--amber-bg);border:1px solid rgba(251,191,36,.15);font-size:11px;color:var(--amber);cursor:pointer;font-family:'JetBrains Mono',monospace;margin-left:auto;transition:all .15s}
+  .reflect-btn:hover{background:rgba(251,191,36,.15)}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">CP</div>
+  <div>
+    <h1>CareerPilot</h1>
+    <span>AI Career Advisor · powered by Hindsight</span>
+  </div>
+  <div class="session-badge"><span>memory active</span></div>
+</div>
+
+<div class="session-controls">
+  <span class="session-label">Session:</span>
+  <button class="session-btn active" data-session="1" onclick="switchSession(1)">Chat 1</button>
+  <button class="session-btn" data-session="2" onclick="switchSession(2)">Chat 2</button>
+  <button class="session-btn" data-session="3" onclick="switchSession(3)">Chat 3</button>
+  <button class="reflect-btn" onclick="triggerReflect()">🧠 Reflect</button>
+</div>
+
+<div class="chat-area" id="chat">
+  <div class="welcome">
+    <div class="welcome-icon">🎯</div>
+    <h2>Hey! I'm CareerPilot.</h2>
+    <p>I'm your AI career advisor. I remember our past conversations and use them to give you better guidance over time. Try starting with:</p>
+    <div class="suggestions">
+      <div class="suggestion" onclick="sendSuggestion(this)">I know Python and React</div>
+      <div class="suggestion" onclick="sendSuggestion(this)">I got rejected from an internship</div>
+      <div class="suggestion" onclick="sendSuggestion(this)">What should I focus on next?</div>
+      <div class="suggestion" onclick="sendSuggestion(this)">Help me find internships</div>
+    </div>
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="input" rows="1" placeholder="Tell me about your skills, projects, or career goals..." onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea>
+    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+  <div class="input-hint">Hindsight remembers across sessions · Switch tabs to simulate multi-session learning</div>
+</div>
+
+<script>
+let currentSession = 1;
+let chatHistories = {1: [], 2: [], 3: []};
+const userId = 'demo-student-' + Math.random().toString(36).substr(2,6);
+
+function switchSession(n) {
+  document.querySelectorAll('.session-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-session="${n}"]`).classList.add('active');
+  currentSession = n;
+  renderChat();
+}
+
+function renderChat() {
+  const chat = document.getElementById('chat');
+  const history = chatHistories[currentSession];
+  if (history.length === 0) {
+    chat.innerHTML = `<div class="welcome">
+      <div class="welcome-icon">${currentSession === 1 ? '🎯' : currentSession === 2 ? '💼' : '🚀'}</div>
+      <h2>${currentSession === 1 ? "Let's start! Tell me about yourself." : currentSession === 2 ? "Session 2 — What's happened since?" : "Session 3 — Watch the magic."}</h2>
+      <p>${currentSession === 1 ? "Share your skills, projects, and interests. I'll remember everything." : currentSession === 2 ? "Tell me about applications, rejections, or new skills. I'll connect the dots." : "Ask me anything. I'll use everything I've learned about you across all sessions."}</p>
+      <div class="suggestions">
+        ${currentSession === 1 ?
+          `<div class="suggestion" onclick="sendSuggestion(this)">I know Python and I built a web scraper</div>
+           <div class="suggestion" onclick="sendSuggestion(this)">I'm interested in data science</div>` :
+          currentSession === 2 ?
+          `<div class="suggestion" onclick="sendSuggestion(this)">I got rejected from DataCorp's analyst role</div>
+           <div class="suggestion" onclick="sendSuggestion(this)">They said I need stronger SQL skills</div>` :
+          `<div class="suggestion" onclick="sendSuggestion(this)">What should I focus on next?</div>
+           <div class="suggestion" onclick="sendSuggestion(this)">Any internship suggestions based on what you know about me?</div>`
+        }
+      </div>
+    </div>`;
+    return;
+  }
+  chat.innerHTML = history.map(m => renderMessage(m)).join('');
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function renderMessage(m) {
+  if (m.role === 'user') {
+    return `<div class="msg user">
+      <div class="msg-label">you</div>
+      <div class="msg-bubble">${escapeHtml(m.content)}</div>
+    </div>`;
+  }
+  let memoryHtml = '';
+  if (m.memories && m.memories.length > 0) {
+    const items = m.memories.map(mem =>
+      `<div class="memory-item">${escapeHtml(mem.text)}</div>`
+    ).join('');
+    memoryHtml = `<div class="memory-panel">
+      <div class="memory-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span class="memory-badge">${m.memories.length} memories recalled</span>
+      </div>
+      <div class="memory-list">${items}</div>
+    </div>`;
+  }
+  return `<div class="msg assistant">
+    <div class="msg-label">careerpilot ${m.memories_used > 0 ? `· <span class="memory-badge">🧠 ${m.memories_used} memories</span>` : ''}</div>
+    <div class="msg-bubble">${formatMarkdown(m.content)}</div>
+    ${memoryHtml}
+  </div>`;
+}
+
+async function sendMessage() {
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  // Remove welcome if present
+  const welcome = document.querySelector('.welcome');
+  if (welcome) welcome.remove();
+
+  // Add user message
+  chatHistories[currentSession].push({role:'user', content:text});
+  renderChat();
+  input.value = '';
+  autoGrow(input);
+
+  // Show typing
+  const chat = document.getElementById('chat');
+  const typing = document.createElement('div');
+  typing.className = 'msg assistant';
+  typing.id = 'typing';
+  typing.innerHTML = `<div class="msg-label">careerpilot</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(typing);
+  chat.scrollTop = chat.scrollHeight;
+
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        message: text,
+        user_id: userId,
+        session_id: `session-${currentSession}`
+      })
+    });
+    const data = await res.json();
+
+    chatHistories[currentSession].push({
+      role: 'assistant',
+      content: data.reply,
+      memories_used: data.memories_used || 0,
+      memories: data.memories || []
+    });
+  } catch(e) {
+    chatHistories[currentSession].push({
+      role: 'assistant', content: `Error: ${e.message}. Make sure the server is running.`, memories_used: 0, memories: []
+    });
+  }
+
+  document.getElementById('typing')?.remove();
+  document.getElementById('sendBtn').disabled = false;
+  renderChat();
+}
+
+async function triggerReflect() {
+  const chat = document.getElementById('chat');
+  // Add a reflect indicator
+  const reflectMsg = document.createElement('div');
+  reflectMsg.className = 'msg assistant';
+  reflectMsg.innerHTML = `<div class="msg-label">careerpilot · 🧠 reflecting...</div>
+    <div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(reflectMsg);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const res = await fetch('/api/reflect', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({query: "What have you learned about this student? Summarize their skills, goals, rejections, and your best career advice for them."})
+    });
+    const data = await res.json();
+    reflectMsg.innerHTML = `<div class="msg-label">careerpilot · <span class="memory-badge">🧠 reflection</span></div>
+      <div class="msg-bubble" style="border-left:2px solid var(--amber)">${formatMarkdown(data.reflection || data.error)}</div>`;
+  } catch(e) {
+    reflectMsg.innerHTML = `<div class="msg-label">careerpilot</div>
+      <div class="msg-bubble">Reflect failed: ${e.message}</div>`;
+  }
+}
+
+function sendSuggestion(el) { document.getElementById('input').value = el.textContent; sendMessage(); }
+function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoGrow(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function formatMarkdown(t) {
+  return escapeHtml(t)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`(.*?)`/g,'<code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:12px">$1</code>')
+    .replace(/\n/g,'<br>');
+}
+</script>
+</body>
+</html>
