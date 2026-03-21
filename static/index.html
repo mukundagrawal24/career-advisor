@@ -104,7 +104,7 @@
   <div class="logo">CP</div>
   <div>
     <h1>CareerPilot</h1>
-    <span>AI Career Advisor · powered by Hindsight</span>
+    <span>AI Career Advisor - powered by Hindsight</span>
   </div>
   <div class="session-badge"><span>memory active</span></div>
 </div>
@@ -114,12 +114,12 @@
   <button class="session-btn active" data-session="1" onclick="switchSession(1)">Chat 1</button>
   <button class="session-btn" data-session="2" onclick="switchSession(2)">Chat 2</button>
   <button class="session-btn" data-session="3" onclick="switchSession(3)">Chat 3</button>
-  <button class="reflect-btn" onclick="triggerReflect()">🧠 Reflect</button>
+  <button class="reflect-btn" onclick="triggerReflect()">&#129504; Reflect</button>
 </div>
 
 <div class="chat-area" id="chat">
   <div class="welcome">
-    <div class="welcome-icon">🎯</div>
+    <div class="welcome-icon">&#127919;</div>
     <h2>Hey! I'm CareerPilot.</h2>
     <p>I'm your AI career advisor. I remember our past conversations and use them to give you better guidance over time. Try starting with:</p>
     <div class="suggestions">
@@ -138,7 +138,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
     </button>
   </div>
-  <div class="input-hint">Hindsight remembers across sessions · Switch tabs to simulate multi-session learning</div>
+  <div class="input-hint">Hindsight remembers across sessions - Switch tabs to simulate multi-session learning</div>
 </div>
 
 <script>
@@ -158,8 +158,8 @@ function renderChat() {
   const history = chatHistories[currentSession];
   if (history.length === 0) {
     chat.innerHTML = `<div class="welcome">
-      <div class="welcome-icon">${currentSession === 1 ? '🎯' : currentSession === 2 ? '💼' : '🚀'}</div>
-      <h2>${currentSession === 1 ? "Let's start! Tell me about yourself." : currentSession === 2 ? "Session 2 — What's happened since?" : "Session 3 — Watch the magic."}</h2>
+      <div class="welcome-icon">${currentSession === 1 ? '&#127919;' : currentSession === 2 ? '&#128188;' : '&#128640;'}</div>
+      <h2>${currentSession === 1 ? "Let's start! Tell me about yourself." : currentSession === 2 ? "Session 2 - What's happened since?" : "Session 3 - Watch the magic."}</h2>
       <p>${currentSession === 1 ? "Share your skills, projects, and interests. I'll remember everything." : currentSession === 2 ? "Tell me about applications, rejections, or new skills. I'll connect the dots." : "Ask me anything. I'll use everything I've learned about you across all sessions."}</p>
       <div class="suggestions">
         ${currentSession === 1 ?
@@ -200,7 +200,7 @@ function renderMessage(m) {
     </div>`;
   }
   return `<div class="msg assistant">
-    <div class="msg-label">careerpilot ${m.memories_used > 0 ? `· <span class="memory-badge">🧠 ${m.memories_used} memories</span>` : ''}</div>
+    <div class="msg-label">careerpilot ${m.memories_used > 0 ? `· <span class="memory-badge">&#129504; ${m.memories_used} memories</span>` : ''}</div>
     <div class="msg-bubble">${formatMarkdown(m.content)}</div>
     ${memoryHtml}
   </div>`;
@@ -266,7 +266,7 @@ async function triggerReflect() {
   // Add a reflect indicator
   const reflectMsg = document.createElement('div');
   reflectMsg.className = 'msg assistant';
-  reflectMsg.innerHTML = `<div class="msg-label">careerpilot · 🧠 reflecting...</div>
+  reflectMsg.innerHTML = `<div class="msg-label">careerpilot · &#129504; reflecting...</div>
     <div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
   chat.appendChild(reflectMsg);
   chat.scrollTop = chat.scrollHeight;
@@ -278,7 +278,7 @@ async function triggerReflect() {
       body: JSON.stringify({query: "What have you learned about this student? Summarize their skills, goals, rejections, and your best career advice for them."})
     });
     const data = await res.json();
-    reflectMsg.innerHTML = `<div class="msg-label">careerpilot · <span class="memory-badge">🧠 reflection</span></div>
+    reflectMsg.innerHTML = `<div class="msg-label">careerpilot · <span class="memory-badge">&#129504; reflection</span></div>
       <div class="msg-bubble" style="border-left:2px solid var(--amber)">${formatMarkdown(data.reflection || data.error)}</div>`;
   } catch(e) {
     reflectMsg.innerHTML = `<div class="msg-label">careerpilot</div>
