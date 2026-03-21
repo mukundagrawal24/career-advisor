@@ -5,6 +5,7 @@ Hackathon Project: AI Agents That Learn Using Hindsight
 
 import os
 import json
+import re
 import asyncio
 from datetime import datetime, timezone
 from pathlib import Path
@@ -148,6 +149,7 @@ async def chat(request: Request):
             max_tokens=1024,
         )
         assistant_reply = llm_response.choices[0].message.content
+        assistant_reply = re.sub(r'<think>.*?</think>', '', assistant_reply, flags=re.DOTALL).strip()
     except Exception as e:
         print(f"[ERROR] LLM call failed: {e}")
         # Fallback: try with a different model
@@ -162,6 +164,7 @@ async def chat(request: Request):
                 max_tokens=1024,
             )
             assistant_reply = llm_response.choices[0].message.content
+            assistant_reply = re.sub(r'<think>.*?</think>', '', assistant_reply, flags=re.DOTALL).strip()
         except Exception as e2:
             return JSONResponse(
                 {"error": f"LLM failed: {str(e2)}"}, status_code=500
