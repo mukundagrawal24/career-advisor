@@ -4,299 +4,322 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CareerPilot - AI Career Advisor</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  :root{
-    --bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a26;--surface3:#22222f;
-    --text:#e8e6e3;--text2:#9b98a0;--text3:#5f5d66;
-    --accent:#6c63ff;--accent2:#8b7dff;--accent-glow:rgba(108,99,255,.15);
-    --green:#34d399;--green-bg:rgba(52,211,153,.08);
-    --amber:#fbbf24;--amber-bg:rgba(251,191,36,.08);
-    --coral:#f87171;--radius:12px;
-  }
-  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
-
-  /* ── Header ────────────────────────────────────── */
-  .header{padding:16px 24px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(20px);position:relative;z-index:10}
-  .header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.3}
-  .logo{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),#a78bfa);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff}
-  .header h1{font-size:18px;font-weight:700;letter-spacing:-.02em}
-  .header span{font-size:12px;color:var(--text3);font-family:'JetBrains Mono',monospace}
-  .session-badge{margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--green-bg);border:1px solid rgba(52,211,153,.15);font-size:11px;color:var(--green);font-family:'JetBrains Mono',monospace}
-  .session-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-  /* ── Chat area ─────────────────────────────────── */
-  .chat-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:16px;scroll-behavior:smooth}
-  .chat-area::-webkit-scrollbar{width:4px}
-  .chat-area::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px}
-
-  /* Messages */
-  .msg{max-width:720px;animation:fadeUp .3s ease}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  .msg.user{align-self:flex-end}
-  .msg.assistant{align-self:flex-start;width:100%;max-width:720px}
-
-  .msg-bubble{padding:14px 18px;border-radius:var(--radius);line-height:1.6;font-size:14.5px}
-  .msg.user .msg-bubble{background:var(--accent);color:#fff;border-bottom-right-radius:4px}
-  .msg.assistant .msg-bubble{background:var(--surface2);color:var(--text);border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,.04)}
-
-  .msg-label{font-size:11px;color:var(--text3);margin-bottom:4px;font-family:'JetBrains Mono',monospace;display:flex;align-items:center;gap:6px}
-  .msg.user .msg-label{text-align:right;justify-content:flex-end}
-
-  /* Memory indicator */
-  .memory-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-family:'JetBrains Mono',monospace;background:var(--accent-glow);color:var(--accent2);border:1px solid rgba(108,99,255,.15)}
-
-  /* Memory panel (expandable below assistant message) */
-  .memory-panel{margin-top:8px;border-radius:8px;background:var(--surface);border:1px solid rgba(255,255,255,.04);overflow:hidden;font-size:12px}
-  .memory-toggle{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:11px;user-select:none;transition:background .15s}
-  .memory-toggle:hover{background:var(--surface2)}
-  .memory-toggle svg{width:12px;height:12px;transition:transform .2s}
-  .memory-toggle.open svg{transform:rotate(90deg)}
-  .memory-list{padding:0 12px 10px;display:none}
-  .memory-list.show{display:block}
-  .memory-item{padding:6px 8px;margin-top:4px;border-radius:6px;background:var(--surface2);color:var(--text2);line-height:1.4;font-size:11px;border-left:2px solid var(--accent)}
-
-  /* Welcome card */
-  .welcome{align-self:center;text-align:center;max-width:480px;padding:40px 20px}
-  .welcome-icon{width:64px;height:64px;margin:0 auto 16px;background:linear-gradient(135deg,var(--accent),#a78bfa);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px}
-  .welcome h2{font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
-  .welcome p{color:var(--text2);font-size:14px;line-height:1.5;margin-bottom:24px}
-  .suggestions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
-  .suggestion{padding:8px 14px;border-radius:20px;background:var(--surface2);border:1px solid rgba(255,255,255,.06);font-size:12.5px;color:var(--text2);cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
-  .suggestion:hover{background:var(--surface3);color:var(--text);border-color:var(--accent);transform:translateY(-1px)}
-
-  /* ── Input area ────────────────────────────────── */
-  .input-area{padding:16px 24px 20px;border-top:1px solid rgba(255,255,255,.04);background:var(--surface)}
-  .input-row{display:flex;gap:10px;max-width:720px;margin:0 auto}
-  .input-row textarea{flex:1;background:var(--surface2);border:1px solid rgba(255,255,255,.06);border-radius:var(--radius);padding:12px 16px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;resize:none;outline:none;min-height:44px;max-height:120px;line-height:1.5;transition:border-color .15s}
-  .input-row textarea:focus{border-color:var(--accent)}
-  .input-row textarea::placeholder{color:var(--text3)}
-  .send-btn{width:44px;height:44px;border-radius:var(--radius);background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
-  .send-btn:hover{background:var(--accent2);transform:scale(1.04)}
-  .send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-  .send-btn svg{width:18px;height:18px;color:#fff}
-  .input-hint{text-align:center;margin-top:8px;font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
-
-  /* Typing indicator */
-  .typing{display:flex;gap:4px;padding:14px 18px}
-  .typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce .6s infinite alternate}
-  .typing span:nth-child(2){animation-delay:.15s}
-  .typing span:nth-child(3){animation-delay:.3s}
-  @keyframes bounce{to{opacity:.3;transform:translateY(-4px)}}
-
-  /* Session controls */
-  .session-controls{display:flex;gap:8px;align-items:center;padding:8px 24px;background:var(--surface);border-bottom:1px solid rgba(255,255,255,.03)}
-  .session-btn{padding:5px 10px;border-radius:6px;background:var(--surface2);border:1px solid rgba(255,255,255,.06);font-size:11px;color:var(--text2);cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all .15s}
-  .session-btn:hover{background:var(--surface3);color:var(--text)}
-  .session-btn.active{background:var(--accent-glow);border-color:var(--accent);color:var(--accent2)}
-  .session-label{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
-
-  /* Reflect panel */
-  .reflect-btn{padding:5px 10px;border-radius:6px;background:var(--amber-bg);border:1px solid rgba(251,191,36,.15);font-size:11px;color:var(--amber);cursor:pointer;font-family:'JetBrains Mono',monospace;margin-left:auto;transition:all .15s}
-  .reflect-btn:hover{background:rgba(251,191,36,.15)}
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#1a56db;--primary-light:#e8eefb;--primary-dark:#1342a8;--bg:#f7f8fc;--white:#fff;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--border:#e2e8f0;--green:#059669;--green-bg:#ecfdf5;--red-bg:#fef2f2;--coral:#f43f5e;--sidebar:#1e293b;--sidebar-text:#94a3b8;--radius:10px;--radius-lg:14px}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
+.sidebar{width:250px;background:var(--sidebar);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-brand{padding:20px 16px;display:flex;align-items:center;gap:10px}
+.sidebar-brand .icon{width:34px;height:34px;background:var(--coral);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.sidebar-brand .icon svg{width:18px;height:18px;fill:white}
+.sidebar-brand span{color:#fff;font-size:17px;font-weight:700}
+.sidebar-brand em{font-style:normal;color:var(--coral)}
+.sidebar-section{padding:0 10px;margin-bottom:4px}
+.sidebar-label{padding:8px 10px 6px;font-size:10px;font-weight:600;color:var(--sidebar-text);text-transform:uppercase;letter-spacing:.08em}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--sidebar-text);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;margin-bottom:1px}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+.nav-item.active{background:var(--coral);color:#fff}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-item.active svg{opacity:1}
+.chat-list{flex:1;overflow-y:auto;padding:0 10px}
+.chat-list::-webkit-scrollbar{width:3px}
+.chat-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.chat-list-label{padding:10px 10px 6px;font-size:10px;font-weight:600;color:var(--sidebar-text);text-transform:uppercase;letter-spacing:.08em}
+.chat-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;color:var(--sidebar-text);font-size:12.5px;cursor:pointer;transition:all .12s;margin-bottom:1px;overflow:hidden}
+.chat-item:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+.chat-item.active{background:rgba(255,255,255,.1);color:#fff}
+.chat-item svg{width:14px;height:14px;flex-shrink:0;opacity:.5}
+.chat-item span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.new-chat-btn{margin:10px;padding:10px;border-radius:8px;background:var(--primary);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+.new-chat-btn:hover{background:var(--primary-dark)}
+.new-chat-btn svg{width:15px;height:15px}
+.sidebar-footer{padding:10px;border-top:1px solid rgba(255,255,255,.06)}
+.sidebar-footer a{display:block;color:var(--sidebar-text);font-size:11px;padding:5px 8px;text-decoration:none;border-radius:6px}
+.sidebar-footer a:hover{background:rgba(255,255,255,.06)}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.header{padding:12px 24px;background:var(--white);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0}
+.header h1{font-size:16px;font-weight:700}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.memory-status{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--green-bg);border:1px solid #bbf7d0;font-size:10px;font-weight:600;color:var(--green);font-family:'JetBrains Mono',monospace}
+.memory-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.content-area{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.scroll-area{flex:1;overflow-y:auto;padding:24px 28px}
+.scroll-area::-webkit-scrollbar{width:5px}
+.scroll-area::-webkit-scrollbar-thumb{background:#d1d5db;border-radius:4px}
+.page{display:none}.page.active{display:block}
+.welcome{max-width:680px;margin:20px auto;text-align:center}
+.welcome-logo span{font-size:24px;font-weight:700;color:var(--sidebar)}.welcome-logo em{font-style:normal;color:var(--coral)}
+.welcome h2{font-size:22px;font-weight:700;margin:8px 0 24px}
+.cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:left}
+.card-group h3{font-size:12px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:5px;justify-content:center}
+.card-group h3 svg{width:14px;height:14px;color:var(--text2)}
+.card{background:var(--primary-light);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--primary-dark);line-height:1.5;margin-bottom:6px;cursor:pointer;transition:all .15s;border:1px solid transparent}
+.card:hover{border-color:var(--primary);transform:translateY(-1px)}
+.card.no-click{cursor:default;background:#f1f5f9;color:var(--text2)}.card.no-click:hover{border-color:transparent;transform:none}
+.form-box{max-width:680px;margin:20px auto;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.form-box h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.form-box p{font-size:12px;color:var(--text2);margin-bottom:14px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-field label{font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:4px}
+.form-field input,.form-field textarea{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text);outline:none}
+.form-field input:focus,.form-field textarea:focus{border-color:var(--primary)}
+.form-field textarea{resize:vertical}
+.form-field input::placeholder,.form-field textarea::placeholder{color:var(--text3)}
+.form-field.full{grid-column:1/-1}
+.btn{padding:8px 18px;border-radius:8px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;border:none}
+.btn-primary{background:var(--primary);color:#fff}.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text2)}.btn-outline:hover{background:var(--bg)}
+.profile-page{max-width:680px;margin:30px auto}
+.profile-header{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+.profile-avatar{width:56px;height:56px;border-radius:14px;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;color:#fff}
+.profile-info h2{font-size:18px;font-weight:700}.profile-info p{font-size:13px;color:var(--text2)}
+.profile-section{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;margin-bottom:12px}
+.profile-section h4{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.profile-section .value{font-size:14px;color:var(--text);line-height:1.6}
+.profile-empty{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+.msg{max-width:680px;margin:0 auto 14px;animation:fadeIn .25s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.msg.user{display:flex;justify-content:flex-end}.msg.assistant{display:flex;gap:10px}
+.msg-avatar{width:30px;height:30px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:#fff}
+.msg-content{max-width:82%}
+.msg-bubble{padding:11px 15px;border-radius:var(--radius-lg);font-size:13.5px;line-height:1.65}
+.msg.user .msg-bubble{background:var(--primary);color:#fff;border-bottom-right-radius:4px}
+.msg.assistant .msg-bubble{background:var(--white);color:var(--text);border:1px solid var(--border);border-bottom-left-radius:4px}
+.memory-panel{margin-top:6px;border-radius:8px;background:#fafbff;border:1px solid var(--border);overflow:hidden}
+.memory-toggle{padding:5px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;font-size:10px;font-weight:600;color:var(--primary);font-family:'JetBrains Mono',monospace}
+.memory-toggle:hover{background:var(--primary-light)}
+.memory-toggle svg{width:10px;height:10px;transition:transform .2s}
+.memory-toggle.open svg{transform:rotate(90deg)}
+.memory-list{padding:0 10px 8px;display:none}.memory-list.show{display:block}
+.memory-item{padding:4px 8px;margin-top:3px;border-radius:5px;background:var(--primary-light);color:var(--primary-dark);font-size:10.5px;line-height:1.4;border-left:2px solid var(--primary)}
+.suggestions-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.suggest-chip{padding:5px 12px;border-radius:20px;background:var(--white);border:1px solid var(--border);font-size:11.5px;font-weight:500;color:var(--primary);cursor:pointer;font-family:inherit}
+.suggest-chip:hover{background:var(--primary-light);border-color:var(--primary)}
+.feedback-row{display:flex;gap:5px;margin-top:6px}
+.fb-btn{width:26px;height:26px;border-radius:6px;border:1px solid var(--border);background:var(--white);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.fb-btn:hover{background:var(--primary-light)}.fb-btn svg{width:13px;height:13px;color:var(--text3)}
+.typing{display:flex;gap:4px;padding:11px 15px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--text3);animation:bounce .6s infinite alternate}
+.typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bounce{to{opacity:.3;transform:translateY(-4px)}}
+.input-area{padding:12px 28px 16px;background:var(--white);border-top:1px solid var(--border);flex-shrink:0}
+.input-row{max-width:680px;margin:0 auto;display:flex;gap:8px;align-items:flex-end;border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:5px 5px 5px 14px;background:var(--white)}
+.input-row:focus-within{border-color:var(--primary)}
+.input-row textarea{flex:1;border:none;outline:none;font-family:inherit;font-size:13.5px;color:var(--text);resize:none;min-height:22px;max-height:100px;line-height:1.5;padding:5px 0}
+.input-row textarea::placeholder{color:var(--text3)}
+.send-btn{width:36px;height:36px;border-radius:8px;background:var(--primary);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.send-btn:hover{background:var(--primary-dark)}.send-btn:disabled{opacity:.35;cursor:not-allowed}
+.send-btn svg{width:16px;height:16px;color:#fff}
+.input-hint{text-align:center;margin-top:6px;font-size:10px;color:var(--text3)}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div class="logo">CP</div>
-  <div>
-    <h1>CareerPilot</h1>
-    <span>AI Career Advisor - powered by Hindsight</span>
+<div class="sidebar">
+  <div class="sidebar-brand"><div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><span>Career<em>Pilot</em></span></div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">Menu</div>
+    <div class="nav-item active" data-page="dashboard" onclick="goTo('dashboard')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</div>
+    <div class="nav-item" data-page="resume" onclick="goTo('resume')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Resume Analyzer</div>
+    <div class="nav-item" data-page="chat" onclick="goTo('chat')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Career Coach</div>
+    <div class="nav-item" data-page="profile" onclick="goTo('profile')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>My Profile</div>
   </div>
-  <div class="session-badge"><span>memory active</span></div>
+  <div class="chat-list" id="chatList"><div class="chat-list-label">Recent chats</div></div>
+  <button class="new-chat-btn" onclick="createNewChat()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>New chat</button>
+  <div class="sidebar-footer"><a href="https://github.com/mukundagrawal24/career-advisor" target="_blank">GitHub Repository</a><a href="https://hindsight.vectorize.io/" target="_blank">Hindsight Docs</a></div>
 </div>
+<div class="main">
+  <div class="header"><h1 id="headerTitle">Dashboard</h1><div class="header-right"><div class="memory-status"><div class="memory-dot"></div>Hindsight active</div></div></div>
+  <div class="content-area">
+    <div class="scroll-area" id="scrollArea">
 
-<div class="session-controls">
-  <span class="session-label">Session:</span>
-  <button class="session-btn active" data-session="1" onclick="switchSession(1)">Chat 1</button>
-  <button class="session-btn" data-session="2" onclick="switchSession(2)">Chat 2</button>
-  <button class="session-btn" data-session="3" onclick="switchSession(3)">Chat 3</button>
-  <button class="reflect-btn" onclick="triggerReflect()">&#129504; Reflect</button>
-</div>
+      <!-- DASHBOARD -->
+      <div class="page active" id="page-dashboard">
+        <div class="welcome">
+          <div class="welcome-logo"><span>Career<em>Pilot</em></span></div>
+          <h2>Welcome to AI Career Coach</h2>
+          <div class="cards">
+            <div class="card-group"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>Examples</h3><div class="card" onclick="quickChat(this.textContent)">I know Python and React. What career paths fit my skills?</div><div class="card" onclick="quickChat(this.textContent)">I got rejected from a data analyst internship. Help me improve.</div><div class="card" onclick="quickChat(this.textContent)">What skills should I learn for a machine learning career?</div></div>
+            <div class="card-group"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Capabilities</h3><div class="card no-click">Retains context from earlier conversations using Hindsight memory</div><div class="card no-click">Analyzes resumes and identifies skill gaps</div><div class="card no-click">Provides personalized internship and career recommendations</div></div>
+            <div class="card-group"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Limitations</h3><div class="card no-click">May occasionally generate incorrect career advice</div><div class="card no-click">Cannot directly apply to jobs on your behalf</div><div class="card no-click">Works best when you share detailed career information</div></div>
+          </div>
+        </div>
+        <div class="form-box">
+          <h3>Set Up Your Profile</h3>
+          <p>Fill this to get personalized career guidance. Your info is saved to Hindsight memory.</p>
+          <div class="form-grid">
+            <div class="form-field"><label>Full Name</label><input id="pName" placeholder="e.g. Mukund Agrawal"></div>
+            <div class="form-field"><label>College/University</label><input id="pCollege" placeholder="e.g. Andhra University"></div>
+            <div class="form-field"><label>Degree & Year</label><input id="pDegree" placeholder="e.g. B.Tech CSE, 3rd Year"></div>
+            <div class="form-field"><label>Career Interest</label><input id="pInterest" placeholder="e.g. Data Science, Full Stack"></div>
+            <div class="form-field full"><label>Skills (comma separated)</label><input id="pSkills" placeholder="e.g. Python, Java, SQL, React"></div>
+            <div class="form-field full"><label>Projects & Experience</label><textarea id="pProjects" rows="2" placeholder="e.g. Built loan management system, won IEEE hackathon"></textarea></div>
+            <div class="form-field full"><label>Goals</label><input id="pGoals" placeholder="e.g. Get a software internship, learn ML"></div>
+          </div>
+          <div style="margin-top:14px;text-align:right"><button class="btn btn-primary" onclick="saveProfile()">Save Profile</button></div>
+        </div>
+      </div>
 
-<div class="chat-area" id="chat">
-  <div class="welcome">
-    <div class="welcome-icon">&#127919;</div>
-    <h2>Hey! I'm CareerPilot.</h2>
-    <p>I'm your AI career advisor. I remember our past conversations and use them to give you better guidance over time. Try starting with:</p>
-    <div class="suggestions">
-      <div class="suggestion" onclick="sendSuggestion(this)">I know Python and React</div>
-      <div class="suggestion" onclick="sendSuggestion(this)">I got rejected from an internship</div>
-      <div class="suggestion" onclick="sendSuggestion(this)">What should I focus on next?</div>
-      <div class="suggestion" onclick="sendSuggestion(this)">Help me find internships</div>
+      <!-- RESUME ANALYZER -->
+      <div class="page" id="page-resume">
+        <div class="form-box">
+          <h3>Resume Analyzer</h3>
+          <p>Paste your resume text below. CareerPilot will analyze it, identify skill gaps, and suggest improvements.</p>
+          <textarea id="resumeText" rows="8" placeholder="Paste your resume/CV text here..." style="width:100%;padding:12px;border:1px solid var(--border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--text);outline:none;resize:vertical"></textarea>
+          <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+            <button class="btn btn-outline" onclick="document.getElementById('resumeText').value=''">Clear</button>
+            <button class="btn btn-primary" onclick="analyzeResume()">Analyze Resume</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAREER COACH (CHAT) -->
+      <div class="page" id="page-chat"><div id="chatMessages"></div></div>
+
+      <!-- MY PROFILE (read-only display) -->
+      <div class="page" id="page-profile">
+        <div class="profile-page" id="profileDisplay">
+          <div class="profile-empty">No profile set up yet. Go to <strong>Dashboard</strong> and fill in your profile information.</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="input-area" id="inputArea" style="display:none">
+      <div class="input-row"><textarea id="input" rows="1" placeholder="Type your message..." onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea><button class="send-btn" id="sendBtn" onclick="sendMessage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button></div>
+      <div class="input-hint">Powered by Hindsight agent memory from Vectorize</div>
     </div>
   </div>
 </div>
-
-<div class="input-area">
-  <div class="input-row">
-    <textarea id="input" rows="1" placeholder="Tell me about your skills, projects, or career goals..." onkeydown="handleKey(event)" oninput="autoGrow(this)"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-    </button>
-  </div>
-  <div class="input-hint">Hindsight remembers across sessions - Switch tabs to simulate multi-session learning</div>
-</div>
-
 <script>
-let currentSession = 1;
-let chatHistories = {1: [], 2: [], 3: []};
-const userId = 'demo-student-' + Math.random().toString(36).substr(2,6);
+var userId='student-'+Math.random().toString(36).substr(2,8);
+var allChats={},currentChatId=null,currentPage='dashboard';
+var profileData={name:'',college:'',degree:'',interest:'',skills:'',projects:'',goals:''};
 
-function switchSession(n) {
-  document.querySelectorAll('.session-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`[data-session="${n}"]`).classList.add('active');
-  currentSession = n;
-  renderChat();
+function goTo(page){
+  currentPage=page;
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
+  var nav=document.querySelector('.nav-item[data-page="'+page+'"]');
+  if(nav)nav.classList.add('active');
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  var pg=document.getElementById('page-'+page);
+  if(pg)pg.classList.add('active');
+  var titles={dashboard:'Dashboard',resume:'Resume Analyzer',chat:'Career Coach',profile:'My Profile'};
+  document.getElementById('headerTitle').textContent=titles[page]||'CareerPilot';
+  document.getElementById('inputArea').style.display=(page==='chat')?'block':'none';
+  if(page==='chat'){renderChatMessages();setTimeout(function(){document.getElementById('scrollArea').scrollTop=999999},50)}
+  if(page==='profile')renderProfileDisplay();
 }
 
-function renderChat() {
-  const chat = document.getElementById('chat');
-  const history = chatHistories[currentSession];
-  if (history.length === 0) {
-    chat.innerHTML = `<div class="welcome">
-      <div class="welcome-icon">${currentSession === 1 ? '&#127919;' : currentSession === 2 ? '&#128188;' : '&#128640;'}</div>
-      <h2>${currentSession === 1 ? "Let's start! Tell me about yourself." : currentSession === 2 ? "Session 2 - What's happened since?" : "Session 3 - Watch the magic."}</h2>
-      <p>${currentSession === 1 ? "Share your skills, projects, and interests. I'll remember everything." : currentSession === 2 ? "Tell me about applications, rejections, or new skills. I'll connect the dots." : "Ask me anything. I'll use everything I've learned about you across all sessions."}</p>
-      <div class="suggestions">
-        ${currentSession === 1 ?
-          `<div class="suggestion" onclick="sendSuggestion(this)">I know Python and I built a web scraper</div>
-           <div class="suggestion" onclick="sendSuggestion(this)">I'm interested in data science</div>` :
-          currentSession === 2 ?
-          `<div class="suggestion" onclick="sendSuggestion(this)">I got rejected from DataCorp's analyst role</div>
-           <div class="suggestion" onclick="sendSuggestion(this)">They said I need stronger SQL skills</div>` :
-          `<div class="suggestion" onclick="sendSuggestion(this)">What should I focus on next?</div>
-           <div class="suggestion" onclick="sendSuggestion(this)">Any internship suggestions based on what you know about me?</div>`
-        }
-      </div>
-    </div>`;
+function saveProfile(){
+  profileData.name=document.getElementById('pName').value;
+  profileData.college=document.getElementById('pCollege').value;
+  profileData.degree=document.getElementById('pDegree').value;
+  profileData.interest=document.getElementById('pInterest').value;
+  profileData.skills=document.getElementById('pSkills').value;
+  profileData.projects=document.getElementById('pProjects').value;
+  profileData.goals=document.getElementById('pGoals').value;
+  if(!profileData.name){alert('Please enter your name.');return}
+  var msg='Save my profile information: Name: '+profileData.name+'. College: '+profileData.college+'. Degree: '+profileData.degree+'. Career Interest: '+profileData.interest+'. Skills: '+profileData.skills+'. Projects and Experience: '+profileData.projects+'. Career Goals: '+profileData.goals;
+  fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:msg,user_id:userId,session_id:'profile-save'})}).then(function(){alert('Profile saved successfully! Go to My Profile to view it.')}).catch(function(){alert('Profile saved locally.')});
+}
+
+function renderProfileDisplay(){
+  var c=document.getElementById('profileDisplay');
+  if(!profileData.name){
+    c.innerHTML='<div class="profile-empty">No profile set up yet. Go to <strong>Dashboard</strong> and fill in your profile information.</div>';
     return;
   }
-  chat.innerHTML = history.map(m => renderMessage(m)).join('');
-  chat.scrollTop = chat.scrollHeight;
+  c.innerHTML='<div class="profile-header"><div class="profile-avatar">'+profileData.name.charAt(0).toUpperCase()+'</div><div class="profile-info"><h2>'+escapeHtml(profileData.name)+'</h2><p>'+escapeHtml(profileData.college||'Student')+' - '+escapeHtml(profileData.degree||'')+'</p></div></div>'
+    +'<div class="profile-section"><h4>Career Interest</h4><div class="value">'+(escapeHtml(profileData.interest)||'Not specified')+'</div></div>'
+    +'<div class="profile-section"><h4>Technical Skills</h4><div class="value">'+(escapeHtml(profileData.skills)||'Not specified')+'</div></div>'
+    +'<div class="profile-section"><h4>Projects & Experience</h4><div class="value">'+(escapeHtml(profileData.projects)||'Not specified')+'</div></div>'
+    +'<div class="profile-section"><h4>Career Goals</h4><div class="value">'+(escapeHtml(profileData.goals)||'Not specified')+'</div></div>'
+    +'<div style="text-align:center;margin-top:16px"><button class="btn btn-outline" onclick="goTo(\'dashboard\')">Edit Profile</button></div>';
 }
 
-function renderMessage(m) {
-  if (m.role === 'user') {
-    return `<div class="msg user">
-      <div class="msg-label">you</div>
-      <div class="msg-bubble">${escapeHtml(m.content)}</div>
-    </div>`;
-  }
-  let memoryHtml = '';
-  if (m.memories && m.memories.length > 0) {
-    const items = m.memories.map(mem =>
-      `<div class="memory-item">${escapeHtml(mem.text)}</div>`
-    ).join('');
-    memoryHtml = `<div class="memory-panel">
-      <div class="memory-toggle" onclick="this.classList.toggle('open');this.nextElementSibling.classList.toggle('show')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
-        <span class="memory-badge">${m.memories.length} memories recalled</span>
-      </div>
-      <div class="memory-list">${items}</div>
-    </div>`;
-  }
-  return `<div class="msg assistant">
-    <div class="msg-label">careerpilot ${m.memories_used > 0 ? `· <span class="memory-badge">&#129504; ${m.memories_used} memories</span>` : ''}</div>
-    <div class="msg-bubble">${formatMarkdown(m.content)}</div>
-    ${memoryHtml}
-  </div>`;
+function createNewChat(){
+  var id='chat-'+Date.now();
+  allChats[id]={id:id,messages:[],created:Date.now()};
+  currentChatId=id;
+  goTo('chat');
+  renderChatMessages();
+  renderChatList();
 }
 
-async function sendMessage() {
-  const input = document.getElementById('input');
-  const text = input.value.trim();
-  if (!text) return;
+function openChat(id){currentChatId=id;goTo('chat');renderChatMessages();renderChatList()}
 
-  // Remove welcome if present
-  const welcome = document.querySelector('.welcome');
-  if (welcome) welcome.remove();
+function quickChat(text){createNewChat();document.getElementById('input').value=text;sendMessage()}
 
-  // Add user message
-  chatHistories[currentSession].push({role:'user', content:text});
-  renderChat();
-  input.value = '';
-  autoGrow(input);
-
-  // Show typing
-  const chat = document.getElementById('chat');
-  const typing = document.createElement('div');
-  typing.className = 'msg assistant';
-  typing.id = 'typing';
-  typing.innerHTML = `<div class="msg-label">careerpilot</div><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
-  chat.appendChild(typing);
-  chat.scrollTop = chat.scrollHeight;
-
-  document.getElementById('sendBtn').disabled = true;
-
-  try {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        message: text,
-        user_id: userId,
-        session_id: `session-${currentSession}`
-      })
-    });
-    const data = await res.json();
-
-    chatHistories[currentSession].push({
-      role: 'assistant',
-      content: data.reply,
-      memories_used: data.memories_used || 0,
-      memories: data.memories || []
-    });
-  } catch(e) {
-    chatHistories[currentSession].push({
-      role: 'assistant', content: `Error: ${e.message}. Make sure the server is running.`, memories_used: 0, memories: []
-    });
-  }
-
-  document.getElementById('typing')?.remove();
-  document.getElementById('sendBtn').disabled = false;
-  renderChat();
+function getChatName(chat){
+  if(chat.messages.length>0){var f=chat.messages.find(function(m){return m.role==='user'});if(f)return f.content.substring(0,35)+(f.content.length>35?'...':'')}
+  return'New chat';
 }
 
-async function triggerReflect() {
-  const chat = document.getElementById('chat');
-  // Add a reflect indicator
-  const reflectMsg = document.createElement('div');
-  reflectMsg.className = 'msg assistant';
-  reflectMsg.innerHTML = `<div class="msg-label">careerpilot · &#129504; reflecting...</div>
-    <div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
-  chat.appendChild(reflectMsg);
-  chat.scrollTop = chat.scrollHeight;
-
-  try {
-    const res = await fetch('/api/reflect', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({query: "What have you learned about this student? Summarize their skills, goals, rejections, and your best career advice for them."})
-    });
-    const data = await res.json();
-    reflectMsg.innerHTML = `<div class="msg-label">careerpilot · <span class="memory-badge">&#129504; reflection</span></div>
-      <div class="msg-bubble" style="border-left:2px solid var(--amber)">${formatMarkdown(data.reflection || data.error)}</div>`;
-  } catch(e) {
-    reflectMsg.innerHTML = `<div class="msg-label">careerpilot</div>
-      <div class="msg-bubble">Reflect failed: ${e.message}</div>`;
-  }
+function renderChatList(){
+  var list=document.getElementById('chatList');
+  var sorted=Object.values(allChats).sort(function(a,b){return b.created-a.created});
+  var html='<div class="chat-list-label">Recent chats</div>';
+  sorted.forEach(function(chat){
+    var name=getChatName(chat);
+    var cls=chat.id===currentChatId?' active':'';
+    html+='<div class="chat-item'+cls+'" onclick="openChat(\''+chat.id+'\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span>'+escapeHtml(name)+'</span></div>';
+  });
+  if(sorted.length===0)html+='<div style="padding:8px 10px;font-size:11px;color:var(--sidebar-text)">No chats yet</div>';
+  list.innerHTML=html;
 }
 
-function sendSuggestion(el) { document.getElementById('input').value = el.textContent; sendMessage(); }
-function handleKey(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
-function autoGrow(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
-function escapeHtml(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function formatMarkdown(t) {
-  return escapeHtml(t)
-    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g,'<em>$1</em>')
-    .replace(/`(.*?)`/g,'<code style="background:var(--surface3);padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:12px">$1</code>')
-    .replace(/\n/g,'<br>');
+function renderChatMessages(){
+  var c=document.getElementById('chatMessages');
+  if(!currentChatId||!allChats[currentChatId]){c.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text3)">Click New Chat or select a chat from the sidebar.</div>';return}
+  var msgs=allChats[currentChatId].messages;
+  if(msgs.length===0){c.innerHTML='<div style="text-align:center;padding:60px 20px;color:var(--text3)"><p style="font-size:14px;margin-bottom:8px">Ask me anything about your career.</p><p style="font-size:12px">I remember our past conversations and get smarter over time.</p></div>';return}
+  c.innerHTML=msgs.map(function(m){
+    if(m.role==='user')return'<div class="msg user"><div class="msg-content"><div class="msg-bubble">'+escapeHtml(m.content)+'</div></div></div>';
+    var memHtml='';
+    if(m.memories&&m.memories.length>0){
+      var items=m.memories.map(function(mem){return'<div class="memory-item">'+escapeHtml(mem.text)+'</div>'}).join('');
+      memHtml='<div class="memory-panel"><div class="memory-toggle" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'show\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>'+m.memories.length+' memories recalled</div><div class="memory-list">'+items+'</div></div>';
+    }
+    return'<div class="msg assistant"><div class="msg-avatar">CP</div><div class="msg-content"><div class="msg-bubble">'+formatMd(m.content)+'</div>'+memHtml+'<div class="suggestions-row"><div class="suggest-chip" onclick="sendSugg(this)">Tell me more</div><div class="suggest-chip" onclick="sendSugg(this)">Suggest internships</div><div class="suggest-chip" onclick="sendSugg(this)">Help improve my resume</div></div><div class="feedback-row"><div class="fb-btn" onclick="this.style.background=\'var(--primary-light)\'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 9V5a3 3 0 00-3-3l-4 9v11h11.28a2 2 0 002-1.7l1.38-9a2 2 0 00-2-2.3H14z"/></svg></div><div class="fb-btn" onclick="this.style.background=\'var(--red-bg)\'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 15v4a3 3 0 003 3l4-9V2H5.72a2 2 0 00-2 1.7l-1.38 9a2 2 0 002 2.3H10z"/></svg></div></div></div></div>';
+  }).join('');
+  setTimeout(function(){document.getElementById('scrollArea').scrollTop=999999},50);
 }
+
+async function sendMessage(){
+  var input=document.getElementById('input');var text=input.value.trim();if(!text)return;
+  if(!currentChatId)createNewChat();
+  allChats[currentChatId].messages.push({role:'user',content:text});
+  renderChatMessages();renderChatList();input.value='';autoGrow(input);
+  var c=document.getElementById('chatMessages');
+  var typing=document.createElement('div');typing.className='msg assistant';typing.id='typing-ind';
+  typing.innerHTML='<div class="msg-avatar">CP</div><div class="msg-content"><div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>';
+  c.appendChild(typing);document.getElementById('scrollArea').scrollTop=999999;
+  document.getElementById('sendBtn').disabled=true;
+  try{
+    var res=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,user_id:userId,session_id:currentChatId})});
+    var data=await res.json();
+    allChats[currentChatId].messages.push({role:'assistant',content:data.reply||data.error||'No response',memories_used:data.memories_used||0,memories:data.memories||[]});
+  }catch(e){allChats[currentChatId].messages.push({role:'assistant',content:'Error: '+e.message,memories:[]})}
+  var el=document.getElementById('typing-ind');if(el)el.remove();
+  document.getElementById('sendBtn').disabled=false;
+  renderChatMessages();renderChatList();
+}
+
+function analyzeResume(){
+  var text=document.getElementById('resumeText').value.trim();if(!text)return;
+  createNewChat();
+  document.getElementById('input').value="Please analyze my resume and give detailed feedback on improvements, skill gaps, and matching roles:\n\n"+text;
+  sendMessage();
+}
+
+function sendSugg(el){document.getElementById('input').value=el.textContent;sendMessage()}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage()}}
+function autoGrow(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px'}
+function escapeHtml(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function formatMd(t){return escapeHtml(t).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/`(.*?)`/g,'<code style="background:#f1f5f9;padding:1px 5px;border-radius:3px;font-family:JetBrains Mono,monospace;font-size:12px">$1</code>').replace(/\n/g,'<br>')}
+
+goTo('dashboard');renderChatList();
 </script>
 </body>
 </html>

@@ -1,58 +1,51 @@
 """
-Career Advisor - AI Internship & Career Mentor with Hindsight Memory
+CareerPilot - AI Career Advisor with Hindsight Memory
 Hackathon Project: AI Agents That Learn Using Hindsight
 """
 
 import os
-import json
 import re
-import asyncio
+import json
 from datetime import datetime, timezone
-from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 load_dotenv()
 
-# ── Configuration ──────────────────────────────────────────────────────────
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 HINDSIGHT_API_URL = os.getenv("HINDSIGHT_API_URL", "http://localhost:8888")
 HINDSIGHT_API_KEY = os.getenv("HINDSIGHT_API_KEY", "")
 HINDSIGHT_BANK_ID = os.getenv("HINDSIGHT_BANK_ID", "career-advisor")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3-32b")
 
-# ── Initialize clients ────────────────────────────────────────────────────
 from groq import Groq
 from hindsight_client import Hindsight
 
 groq_client = Groq(api_key=GROQ_API_KEY)
 
-# For Hindsight Cloud, pass the API key; for local Docker, no key needed
 hindsight_kwargs = {"base_url": HINDSIGHT_API_URL}
 if HINDSIGHT_API_KEY:
     hindsight_kwargs["api_key"] = HINDSIGHT_API_KEY
 
 hindsight = Hindsight(**hindsight_kwargs)
 
-# ── FastAPI app ────────────────────────────────────────────────────────────
-app = FastAPI(title="Career Advisor")
+app = FastAPI(title="CareerPilot")
 
-# Serve static files (the frontend)
 static_dir = Path(__file__).parent / "static"
 static_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-
-# ── System prompt for the Career Advisor agent ────────────────────────────
 SYSTEM_PROMPT = """You are CareerPilot, an AI career advisor for students. You help with:
 - Tracking skills, projects, and learning progress
 - Analyzing internship applications and rejections
 - Identifying skill gaps and recommending learning paths
 - Suggesting internship opportunities that match the student's profile
 - Providing resume and interview tips
+- Analyzing resumes and giving detailed feedback
 
 CRITICAL RULES:
 1. You have access to MEMORIES from past conversations with this student.
@@ -61,11 +54,10 @@ CRITICAL RULES:
    "I remember you mentioned..." or "Last time we talked, you said..."
 3. If you notice skill gaps based on rejections, PROACTIVELY suggest fixes.
 4. Be encouraging but honest. If they're missing skills, tell them clearly.
-5. Connect the dots between different conversations. If they told you about
-   Python skills in one chat and a data science interest in another, bring
-   them together.
+5. Connect the dots between different conversations.
 6. Keep responses concise and actionable. Students are busy.
 7. When appropriate, suggest specific next steps (courses, projects, applications).
+8. When analyzing a resume, give specific, actionable feedback with examples.
 
 PERSONALITY:
 - Friendly, like a senior student who's been through it all
@@ -74,15 +66,10 @@ PERSONALITY:
 """
 
 
-def build_prompt_with_memories(user_message: str, memories: list) -> str:
-    """Build the full prompt by injecting recalled memories into context."""
+def build_prompt_with_memories(user_message, memories):
     if not memories:
         return user_message
-
-    memory_block = "\n".join(
-        f"- {m.text}" for m in memories
-    )
-
+    memory_block = "\n".join(f"- {m.text}" for m in memories)
     return f"""RELEVANT MEMORIES FROM PAST CONVERSATIONS:
 {memory_block}
 
@@ -91,25 +78,19 @@ CURRENT MESSAGE FROM STUDENT:
 {user_message}
 
 Use the memories above to give a personalized, context-aware response.
-If memories are relevant, reference them naturally in your response.
-Connect dots between different pieces of information you remember."""
+If memories are relevant, reference them naturally in your response."""
 
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_frontend():
-    """Serve the chat interface."""
     html_path = static_dir / "index.html"
     if html_path.exists():
-        return HTMLResponse(content=html_path.read_text())
+        return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
     return HTMLResponse(content="<h1>Place index.html in /static folder</h1>")
 
 
 @app.post("/api/chat")
 async def chat(request: Request):
-    """
-    Main chat endpoint.
-    Flow: recall memories → send to LLM with context → retain new info → respond
-    """
     body = await request.json()
     user_message = body.get("message", "")
     user_id = body.get("user_id", "default-student")
@@ -118,14 +99,14 @@ async def chat(request: Request):
     if not user_message.strip():
         return JSONResponse({"error": "Empty message"}, status_code=400)
 
-    # ── Step 1: RECALL relevant memories ──────────────────────────────
+    # Step 1: RECALL memories
     memories = []
     memory_debug = []
     try:
         recall_result = hindsight.recall(
             bank_id=HINDSIGHT_BANK_ID,
             query=user_message,
-            metadata={"user_id": user_id},  # Filter to this user's memories
+            metadata={"user_id": user_id},
         )
         memories = recall_result.results if recall_result and recall_result.results else []
         memory_debug = [
@@ -133,9 +114,9 @@ async def chat(request: Request):
             for m in memories
         ]
     except Exception as e:
-        print(f"[WARN] Recall failed (continuing without memories): {e}")
+        print(f"[WARN] Recall failed: {e}")
 
-    # ── Step 2: Build prompt with memories and send to LLM ────────────
+    # Step 2: Send to LLM with memories
     enriched_message = build_prompt_with_memories(user_message, memories)
 
     try:
@@ -151,8 +132,7 @@ async def chat(request: Request):
         assistant_reply = llm_response.choices[0].message.content
         assistant_reply = re.sub(r'<think>.*?</think>', '', assistant_reply, flags=re.DOTALL).strip()
     except Exception as e:
-        print(f"[ERROR] LLM call failed: {e}")
-        # Fallback: try with a different model
+        print(f"[ERROR] LLM failed: {e}")
         try:
             llm_response = groq_client.chat.completions.create(
                 model="qwen/qwen3-32b",
@@ -166,15 +146,10 @@ async def chat(request: Request):
             assistant_reply = llm_response.choices[0].message.content
             assistant_reply = re.sub(r'<think>.*?</think>', '', assistant_reply, flags=re.DOTALL).strip()
         except Exception as e2:
-            return JSONResponse(
-                {"error": f"LLM failed: {str(e2)}"}, status_code=500
-            )
+            return JSONResponse({"error": f"LLM failed: {str(e2)}"}, status_code=500)
 
-    # ── Step 3: RETAIN the conversation in Hindsight ──────────────────
-    # Store both the user message and the assistant's response
-    retain_content = f"""Student said: {user_message}
-Career Advisor responded: {assistant_reply}"""
-
+    # Step 3: RETAIN in Hindsight
+    retain_content = f"Student said: {user_message}\nCareer Advisor responded: {assistant_reply}"
     try:
         hindsight.retain(
             bank_id=HINDSIGHT_BANK_ID,
@@ -184,49 +159,24 @@ Career Advisor responded: {assistant_reply}"""
             timestamp=datetime.now(timezone.utc).isoformat(),
         )
     except Exception as e:
-        print(f"[WARN] Retain failed (response still sent): {e}")
+        print(f"[WARN] Retain failed: {e}")
 
-    # ── Step 4: Return response with debug info ───────────────────────
     return JSONResponse({
         "reply": assistant_reply,
         "memories_used": len(memory_debug),
-        "memories": memory_debug,  # Show in UI for demo purposes
+        "memories": memory_debug,
         "session_id": session_id,
     })
 
 
-@app.post("/api/reflect")
-async def reflect(request: Request):
-    """
-    Trigger Hindsight's reflect operation.
-    This synthesizes memories into higher-level observations.
-    Great for demo: "What have you learned about this student?"
-    """
-    body = await request.json()
-    query = body.get("query", "What do you know about this student's career goals and skills?")
-
-    try:
-        result = hindsight.reflect(
-            bank_id=HINDSIGHT_BANK_ID,
-            query=query,
-        )
-        return JSONResponse({
-            "reflection": result.content if result else "No reflection available yet.",
-        })
-    except Exception as e:
-        return JSONResponse({"error": str(e)}, status_code=500)
-
-
 @app.get("/api/health")
 async def health():
-    """Health check endpoint."""
     return {"status": "ok", "bank_id": HINDSIGHT_BANK_ID}
 
 
-# ── Run the server ─────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import uvicorn
-    print("\n🚀 Career Advisor starting up...")
+    print("\n Career Advisor starting up...")
     print(f"   Hindsight: {HINDSIGHT_API_URL}")
     print(f"   Bank: {HINDSIGHT_BANK_ID}")
     print(f"   Model: {GROQ_MODEL}")
